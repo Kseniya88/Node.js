@@ -1,75 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
+
+<script src="https://cdn.socket.io/3.1.1/socket.io.min.js" integrity="sha384-gDaozqUvc4HTgo8iZjwth73C6dDDeOJsAgpxBcMpZYztUfjHXpzrpdrHRdVp8ySO" crossorigin="anonymous"></script>
 
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="style.css">
-    <title>Document</title>
-    <style>
-
-    </style>
+  <title>Socket App</title>
 </head>
-
 <body>
-    <h1>File Browser</h1>
-    <div id="fm">
-        <p>path:<span id="path">/</span></p>
-        <ul>
-            <li id="userfiles">userfiles</li>
-        </ul>
-    </div>
-    <p>Choose file / directory</p>
-    <div id="file_content">
-
-    </div>
-
-    <script>
-        const choose = async (event) => {
-            const parentDir = document.getElementById("path").innerText;
-            let params = {
-                parentDir: parentDir,
-                element: event.target.id
-            };
-            let response = await fetch('/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8'
-                },
-                body: JSON.stringify(params)
-            });
-            if (response.ok) {
-                const ContentType = response.headers.get('Content-Type');
-                let data = "-";
-                let lis
-                if (ContentType === 'text/html') {
-                    data = await response.text()
-document.getElementById("file_content").innerHTML = data;
-                }
-                if (ContentType === 'json') {
-                    data = await response.json();
-                    const fm = document.getElementById("fm");
-                    fm.innerHTML = `
-                    <p>path:<span id="path">${data.parentDir}</span></p>
-                    <ul>
-                    <li id="home">..</li>
-                    </ul>`;
-                    const ul = document.getElementById("fm").querySelector('ul');
-                    data.list.forEach(elem => {
-                        ul.innerHTML += `<li id="${elem}">${elem}</li>`;
-                    });
-                    document.querySelectorAll("li").forEach((element) => {
-                        element.addEventListener("click", choose);
-                    });
-                }
-            }
-        }
-
-        document.querySelectorAll("li").forEach((element) => {
-            element.addEventListener("click", choose);
-        });
-    </script>
+  <input type="text" id="input" autofocus>
+  <input type="submit" id="send" value="Send">
+  <div id="messages"></div>
 </body>
-
+<script type="text/javascript">
+  const socket = io('localhost:3000');
+  const addMessage = (msg) => {
+    const msgSpan = document.createElement('span').innerHTML = msg;
+    document.getElementById('messages').append(msgSpan);
+    document.getElementById('messages').append(document.createElement('br'));
+  };
+  socket.on('connect', function() {
+    console.log('Successful connected to server');
+  });
+  socket.on('SERVER_MSG', function (data) {
+    addMessage(data.msg);
+  });
+  socket.on('NEW_CONN_EVENT', function (data) {
+  addMessage(data.msg);
+});
+  document.getElementById('send').onclick = function() {
+    socket.emit('CLIENT_MSG', { msg: document.getElementById('input').value });
+    document.getElementById('input').value = '';
+  };
+</script>
 </html>
